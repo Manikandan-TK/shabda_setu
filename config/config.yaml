@@ -1,0 +1,37 @@
+model:
+  name: "ai4bharat/indic-bert"  # Base model to use
+  max_length: 512
+  batch_size: 16
+  learning_rate: 2e-5
+  num_epochs: 3
+  weight_decay: 0.01
+
+data:
+  train_path: "data/processed/train.json"
+  eval_path: "data/processed/eval.json"
+  test_path: "data/processed/test.json"
+  languages:
+    - "hindi"
+    - "bengali"
+    - "tamil"
+    - "telugu"
+    - "kannada"
+    - "malayalam"
+
+training:
+  seed: 42
+  gradient_accumulation_steps: 1
+  warmup_steps: 500
+  logging_steps: 100
+  evaluation_strategy: "epoch"
+  save_strategy: "epoch"
+  load_best_model_at_end: true
+  metric_for_best_model: "f1"
+
+wandb:
+  project: "sanskrit-loanword-detection"
+  entity: "your-wandb-username"
+  tags:
+    - "indic-languages"
+    - "sanskrit-detection"
+    - "transformer"
