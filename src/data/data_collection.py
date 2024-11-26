@@ -7,9 +7,11 @@ import json
 from datetime import datetime
 
 from ..core.database import Database
+from ..core.word_reconciliation import WordReconciliation
 from .scrapers.wiktionary_scraper import WiktionaryScraper
 from .scrapers.sanskrit_dict_scraper import SanskritDictScraper
 from .scrapers.wikisource_scraper import WikisourceScraper
+from .scrapers.ddsa_scraper import DDSAScraper
 from ..utils.script_utils import ScriptUtils, Script
 
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +36,11 @@ class DataCollector:
             'class': SanskritDictScraper,
             'weight': 0.8,  # Free dictionary with less strict verification
             'description': 'Open Sanskrit dictionary with etymological information'
+        },
+        'ddsa': {
+            'class': DDSAScraper,
+            'weight': 0.85,  # Historical dictionaries with academic rigor
+            'description': 'Digital Dictionaries of South Asia (University of Chicago)'
         }
     }
     
@@ -154,22 +161,32 @@ class DataCollector:
             finally:
                 scraper.cleanup()
         
-        # Store words in database
+        # Reconcile conflicting information
+        reconciliation = WordReconciliation()
+        reconciled_words = reconciliation.reconcile(all_words)
+        logger.info(
+            f"Reconciled {len(all_words)} raw entries into {len(reconciled_words)} "
+            "unique word pairs"
+        )
+        
+        # Store reconciled words in database
         stored_count = 0
-        for word_info in all_words:
+        for word_info in reconciled_words:
             try:
                 self.db.add_word(
                     word=word_info['word'],
                     sanskrit_word=word_info['sanskrit_word'],
                     language=word_info['language'],
                     confidence=word_info['confidence'],
-                    source_url=word_info['source_url']
+                    source_url=word_info['source_url'],
+                    meanings=word_info.get('meanings'),
+                    usage_examples=word_info.get('usage_examples'),
+                    context=word_info.get('context')
                 )
                 stored_count += 1
             except Exception as e:
                 logger.error(f"Error storing word {word_info}: {e}")
         
         logger.info(
-            f"Successfully processed {len(all_words)} words in total, "
-            f"stored {stored_count} unique entries"
+            f"Successfully stored {stored_count} reconciled entries in the database"
         )
