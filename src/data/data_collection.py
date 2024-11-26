@@ -1,46 +1,64 @@
 """Data collection module for Shabda Setu project."""
 
-import logging
-from typing import List, Dict
-from pathlib import Path
 import json
 from datetime import datetime
+from pathlib import Path
+from typing import List, Dict
 
 from ..core.database import Database
 from ..core.word_reconciliation import WordReconciliation
+from .scrapers.base_scraper import BaseScraper
 from .scrapers.wiktionary_scraper import WiktionaryScraper
 from .scrapers.sanskrit_dict_scraper import SanskritDictScraper
 from .scrapers.wikisource_scraper import WikisourceScraper
 from .scrapers.ddsa_scraper import DDSAScraper
+from .scrapers.punjabi_dict_scraper import PunjabiDictScraper
+from .scrapers.gujarati_dict_scraper import GujaratiDictScraper
+from .scrapers.odia_dict_scraper import OdiaDictScraper
 from ..utils.script_utils import ScriptUtils, Script
+from config.logging_config import setup_logging
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = setup_logging("data_collector")
 
 class DataCollector:
     """Main class for collecting Sanskrit loanwords across Indic languages."""
     
-    # Available scrapers and their base confidence scores
+    # Dictionary source weights for confidence calculation
     SCRAPERS = {
         'wiktionary': {
             'class': WiktionaryScraper,
-            'weight': 1.0,  # Community-verified content
-            'description': 'Wiktionary provides community-verified etymological data'
-        },
-        'wikisource': {
-            'class': WikisourceScraper,
-            'weight': 0.9,  # Classical texts with parallel translations
-            'description': 'Classical Sanskrit texts with parallel translations'
+            'weight': 0.7,
+            'description': 'Wiktionary Sanskrit loanwords'
         },
         'sanskrit_dict': {
             'class': SanskritDictScraper,
-            'weight': 0.8,  # Free dictionary with less strict verification
-            'description': 'Open Sanskrit dictionary with etymological information'
+            'weight': 0.8,
+            'description': 'Sanskrit Dictionary etymologies'
+        },
+        'wikisource': {
+            'class': WikisourceScraper,
+            'weight': 0.9,
+            'description': 'Classical texts with translations'
         },
         'ddsa': {
             'class': DDSAScraper,
-            'weight': 0.85,  # Historical dictionaries with academic rigor
-            'description': 'Digital Dictionaries of South Asia (University of Chicago)'
+            'weight': 0.85,
+            'description': 'Digital Dictionaries of South Asia'
+        },
+        'punjabi_dict': {
+            'class': PunjabiDictScraper,
+            'weight': 0.85,
+            'description': 'Punjabi University Digital Dictionary'
+        },
+        'gujarati_dict': {
+            'class': GujaratiDictScraper,
+            'weight': 0.85,
+            'description': 'Gujarat Vidyapith Dictionary'
+        },
+        'odia_dict': {
+            'class': OdiaDictScraper,
+            'weight': 0.85,
+            'description': "Srujanika's Odia Dictionary"
         }
     }
     
@@ -90,7 +108,10 @@ class DataCollector:
             'kannada': Script.KANNADA,
             'malayalam': Script.MALAYALAM,
             'bengali': Script.BENGALI,
-            'hindi': Script.DEVANAGARI
+            'hindi': Script.DEVANAGARI,
+            'punjabi': Script.GURMUKHI,
+            'gujarati': Script.GUJARATI,
+            'odia': Script.ODIA
         }
         
         script_validation = 1.0
@@ -139,9 +160,11 @@ class DataCollector:
             try:
                 logger.info(f"Starting scraping {scraper.language} with {scraper.__class__.__name__}")
                 words = scraper.scrape_words()
+                logger.debug(f"Scraped {len(words)} words from {scraper.language} using {scraper.__class__.__name__}")
                 
                 # Adjust confidence scores
                 words = [self._adjust_confidence(word, weight) for word in words]
+                logger.debug(f"Adjusted confidence for {len(words)} words from {scraper.language}")
                 
                 # Cache results if directory specified
                 if cache_dir:
@@ -149,6 +172,7 @@ class DataCollector:
                     cache_file = cache_path / f"{scraper.__class__.__name__}_{scraper.language}_{timestamp}.json"
                     with open(cache_file, 'w', encoding='utf-8') as f:
                         json.dump(words, f, ensure_ascii=False, indent=2)
+                    logger.debug(f"Cached {len(words)} words to {cache_file}")
                 
                 all_words.extend(words)
                 logger.info(
@@ -173,6 +197,7 @@ class DataCollector:
         stored_count = 0
         for word_info in reconciled_words:
             try:
+                logger.debug(f"Storing word: {word_info}")
                 self.db.add_word(
                     word=word_info['word'],
                     sanskrit_word=word_info['sanskrit_word'],

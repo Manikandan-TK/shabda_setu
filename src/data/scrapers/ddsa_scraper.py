@@ -2,13 +2,14 @@
 
 import re
 from typing import List, Dict, Optional
-import logging
 from bs4 import BeautifulSoup
-from ..base_scraper import BaseScraper
+from .base_scraper import BaseScraper
 from ...utils.script_utils import ScriptUtils, Script
+from config.logging_config import setup_logging
 
-logger = logging.getLogger(__name__)
 
+
+logger = setup_logging("ddsa")
 class DDSAScraper(BaseScraper):
     """Scraper for Digital Dictionaries of South Asia (University of Chicago)."""
     

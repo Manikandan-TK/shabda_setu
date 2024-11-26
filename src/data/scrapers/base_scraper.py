@@ -1,15 +1,17 @@
-"""Base scraper class for Shabda Setu project."""
+"""Base scraper 
+logger = setup_logging("base")
+class for Shabda Setu project."""
 
 import abc
-import logging
 import time
 from typing import List, Dict, Optional
 from urllib.robotparser import RobotFileParser
 import requests
 from bs4 import BeautifulSoup
+from config.logging_config import setup_logging
+from config.logging_config import setup_logging
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = setup_logging('scraper')
 
 class BaseScraper(abc.ABC):
     """Abstract base class for all scrapers."""

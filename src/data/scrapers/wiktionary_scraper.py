@@ -3,11 +3,12 @@
 import re
 from typing import List, Dict, Optional, Tuple
 from urllib.parse import urljoin
-import logging
 from .base_scraper import BaseScraper
+from config.logging_config import setup_logging
 
-logger = logging.getLogger(__name__)
 
+
+logger = setup_logging("wiktionary")
 class WiktionaryScraper(BaseScraper):
     """Scraper for Wiktionary to find Sanskrit loanwords in Indic languages."""
     
@@ -118,7 +119,7 @@ class WiktionaryScraper(BaseScraper):
                 return None
                 
             # Look for Sanskrit word in etymology
-            sanskrit_pattern = r'संस्कृतम्|sanskṛtam|sanskrit'
+            sanskrit_pattern = r'संस्कृत(?:म्)?|sanskṛtam?|sanskrit'
             etym_text = etym_section.text
             
             if not re.search(sanskrit_pattern, etym_text, re.IGNORECASE):
@@ -126,10 +127,30 @@ class WiktionaryScraper(BaseScraper):
                 
             # Extract Sanskrit word if present (within देवनागरी script)
             sanskrit_word = None
-            devanagari_pattern = r'[\u0900-\u097F]+'
-            matches = re.findall(devanagari_pattern, etym_text)
-            if matches:
-                sanskrit_word = matches[0]
+            
+            # First try to find a pattern like "word (transliteration)"
+            devanagari_iast_pattern = r'([\u0900-\u097F]+(?:\s*[\u0900-\u097F]+)*)\s*\(([a-zA-Z]+)\)'
+            matches = re.finditer(devanagari_iast_pattern, etym_text)
+            
+            for match in matches:
+                devanagari = match.group(1)
+                iast = match.group(2).lower()
+                # If we find a match with both Devanagari and IAST, use it
+                # Skip the word "संस्कृतम्" itself
+                if devanagari and iast and devanagari != 'संस्कृतम्':
+                    sanskrit_word = devanagari.split()[-1]  # Take the last word if multiple
+                    break
+            
+            # If no match found with IAST, try finding any Devanagari word
+            if not sanskrit_word:
+                devanagari_pattern = r'[\u0900-\u097F]+(?:\s*[\u0900-\u097F]+)*'
+                matches = re.findall(devanagari_pattern, etym_text)
+                if matches:
+                    # Skip संस्कृतम् and take the next word
+                    for word in matches:
+                        if word != 'संस्कृतम्':
+                            sanskrit_word = word.split()[-1]  # Take the last word if multiple
+                            break
             
             if not sanskrit_word:
                 return None
