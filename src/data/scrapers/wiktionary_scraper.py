@@ -48,6 +48,24 @@ class WiktionaryScraper(BaseScraper):
             'script_range': (0x0C80, 0x0CFF),  # Kannada script Unicode range
             'category': 'ವರ್ಗ:ಸಂಸ್ಕೃತದಿಂದ_ಕನ್ನಡಕ್ಕೆ',
             'etymology_headers': ['ವ್ಯುತ್ಪತ್ತಿ', 'ಇತಿಹಾಸ']
+        },
+        'gujarati': {
+            'code': 'gu',
+            'script_range': (0x0A80, 0x0AFF),  # Gujarati script Unicode range
+            'category': 'શ્રેણી:સંસ્કૃત_થી_ગુજરાતી',
+            'etymology_headers': ['વ્યુત્પત્તિ', 'ઇતિહાસ']
+        },
+        'punjabi': {
+            'code': 'pa',
+            'script_range': (0x0A00, 0x0A7F),  # Gurmukhi script Unicode range
+            'category': 'ਸ਼੍ਰੇਣੀ:ਸੰਸਕ੍ਰਿਤ_ਤੋਂ_ਪੰਜਾਬੀ',
+            'etymology_headers': ['ਵਿਉਤਪਤੀ', 'ਇਤਿਹਾਸ']
+        },
+        'odia': {
+            'code': 'or',
+            'script_range': (0x0B00, 0x0B7F),  # Odia script Unicode range
+            'category': 'ଶ୍ରେଣୀ:ସଂସ୍କୃତରୁ_ଓଡ଼ିଆ',
+            'etymology_headers': ['ବ୍ୟୁତ୍ପତ୍ତି', 'ଇତିହାସ']
         }
     }
     
@@ -155,7 +173,10 @@ class WiktionaryScraper(BaseScraper):
                 'bengali': 'পরবর্তী',
                 'telugu': 'తరువాత',
                 'malayalam': 'അടുത്തത്',
-                'kannada': 'ಮುಂದಿನ'
+                'kannada': 'ಮುಂದಿನ',
+                'gujarati': 'આગળ',
+                'punjabi': 'ਅਗਲਾ',
+                'odia': 'ପରବର୍ତ୍ତୀ'
             }
             next_pattern = next_patterns.get(self.language, 'next')
             next_link = soup.find('a', text=re.compile(next_pattern, re.IGNORECASE))
